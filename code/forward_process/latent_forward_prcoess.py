@@ -7,7 +7,7 @@ This module introduces the Forward process of Latent Diffusion Models (LDM).
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
-from forward_process import image_normalize, forward_diffusion_process
+from forward_process import image_normalize, forward_diffusion_process, plot_images
 
 def latent_representation(image: np.array, latent_dim: int) -> np.array:
     """
@@ -39,4 +39,4 @@ if __name__ == "__main__":
     latent_list = forward_diffusion_process(latent_x, T, beta)
 
     # Plot the results
-    plot_latent_images(T, latent_list, latent=True)
+    plot_images(T, latent_list, latent=True)
