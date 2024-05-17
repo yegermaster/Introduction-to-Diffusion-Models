@@ -1,8 +1,7 @@
 """
-Diffusion Models: Visual Information Reconstruction in Neural Networks
+Introduction to Diffuision Models: Visual Information Reconstruction in Neural Networks
 
 This module introduces the Forward procress of Diffusion Models (DM). 
-focusing particularly on the use of the U-Net architecture within these models.
 """
 
 import numpy as np
@@ -47,7 +46,7 @@ def forward_diffusion_process(image: np.array, steps: int, scheduler: np.array) 
     
     return image_list
 
-def plot_images(steps: int, image_list: list) -> plt:
+def plot_images(steps: int, image_list: list, latent: bool) -> plt:
     """
     Plot images at each step of the diffusion process.
 
@@ -60,7 +59,10 @@ def plot_images(steps: int, image_list: list) -> plt:
     """
     _, axes = plt.subplots(1, steps + 1, figsize=(15, 5))
     for step, noised_image in enumerate(image_list):
-        axes[step].imshow(noised_image, cmap='gray')
+        if latent:
+            axes[step].imshow(noised_image, aspect='auto', cmap='gray')
+        else:
+            axes[step].imshow(noised_image, cmap='gray')
         axes[step].set_title(f"Step {step}", fontsize=10)
         axes[step].axis('off')
     plt.show()
@@ -75,4 +77,4 @@ if __name__ == "__main__":
     x_list = forward_diffusion_process(x, T, beta)
 
     # Plot the results
-    plot_images(T, x_list)
+    plot_images(T, x_list, latent=False)

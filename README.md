@@ -1,4 +1,4 @@
-# Latent Diffusion Models: Visual Information Reconstruction in Neural Networks
+# Introduction to Diffusion Models: Visual Information Reconstruction in Neural Networks
 
 ## Introduction
 
@@ -21,10 +21,20 @@ much like how your coffee diffuses into water—starting with a Gaussian distrib
 So, just like our ink in water, we first immerse the data into noise (the forward process or encoder) and then trace it back to the original information (the backward process or decoder).
 
 ## Forward process
+During this process, Gaussian noise is progressively added to the data X over T steps, creating a sequence of increasingly noisy data representations {Xt}. This simulates a forward diffusion process where the data becomes more corrupted at each step. The result for each individual data point X can be seen in the image before where T=10 (normally T~=1000) However, this type of algorithm might struggle with high computational costs and inefficiencies when processing high-dimensional data, as these costs scale significantly with the data's dimensionality. A solution to this can be found in Latent Diffusion Models (LDM).
+
 Check out the `forward_process.py` file for an example of the code in action.
 
-
 ![alt text](image.png)
+
+Latent Diffusion Models (LDM) involve encoding an image into a latent space, applying noise to the latent representation over several steps (the forward diffusion process), and then attempting to reconstruct the image from the noisy latent representation (the reverse diffusion process).
+
+Check out the `latent_forward_process.py` file for an example of the code in action.
+
+![alt text](image-1.png)
+
+* Step 0: The latent representation of the original image, which retains most of the information from the original image but in a compressed form.
+* Step 1 to Step 10: Progressive addition of noise to the latent representation. As you move from Step 1 to Step 10, the latent representation becomes increasingly noisy, leading to a loss of the original information. By Step 10, the representation appears nearly homogeneous, indicating significant information loss.
 
 ## Backward Process
 
