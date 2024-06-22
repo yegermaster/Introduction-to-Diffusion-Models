@@ -10,10 +10,11 @@ This paper introduces the application of Latent Diffusion Models (LDM) in recons
 </div>
 
 ## Stable diffuision
-Think of stable diffusion like a sophisticated game of telephone, but with math. The model uses a stochastic process (fancy term for randomness), where each state depends only on the previous one, forming what's known as a Markov chain. This iterative method transitions from one distribution to another, 
+Stable diffusion operates like a sophisticated mathematical game of 'telephone'. It uses a stochastic process, where each state is solely dependent on the previous one, forming a Markov chain. In this model, information transitions from one distribution to another, akin to processes seen in non-equilibrium thermodynamics. This is similar to how ink disperses in water, starting from a localized concentration and gradually diffusing to form a more uniform distribution.
 
-The model employs a stochastic (fancy term for randomness), where each state depends only on the previous state. The method iteratively transitions from one distribution to another, an idea used in non-equilibrium thermodynamics, and so it's effectively tracing and reconstructing lost information.
-much like how your coffee diffuses into water—starting with a Gaussian distribution and transforming it into a target distribution.
+Just like ink dispersing in water, we begin by embedding the data in noise (the forward process, akin to an encoder) and then systematically recover the original information (the reverse process, similar to a decoder).
+
+
 
 <img src="img/ink_in_water.webp" alt="Description of image 1" width="200"/>
 
@@ -21,13 +22,13 @@ much like how your coffee diffuses into water—starting with a Gaussian distrib
 So, just like our ink in water, we first immerse the data into noise (the forward process or encoder) and then trace it back to the original information (the reverse process or decoder).
 
 ## Forward process
-During this process, Gaussian noise is progressively added to the data X over T steps, creating a sequence of increasingly noisy data representations {Xt}. This simulates a forward diffusion process where the data becomes more corrupted at each step. The result for each individual data point X can be seen in the image before where T=10 (normally T~=1000) However, this type of algorithm might struggle with high computational costs and inefficiencies when processing high-dimensional data, as these costs scale significantly with the data's dimensionality. A solution to this can be found in Latent Diffusion Models (LDM).
+During this process, Gaussian noise is progressively added to the data X over T steps, creating a sequence of increasingly noisy data representations {Xt}. This simulates a forward diffusion process where the data becomes more corrupted at each step. The result for each individual data point X can be seen in the image before where T=10 (normally T~=1000) However, this type of algorithm might struggle with high computational costs and inefficiencies when processing high-dimensional data , as these costs scale significantly with the data's dimensionality. A solution to this can be found in Latent Diffusion Models (LDM).
 
 Check out the `forward_process.py` file for an example of the code in action.
 
 ![alt text](img/forward_process.png)
 
-Latent Diffusion Models (LDM) involve encoding an image into a latent space, applying noise to the latent representation over several steps (the forward diffusion process), and then attempting to reconstruct the image from the noisy latent representation (the reverse diffusion process).
+Latent Diffusion Models (LDM) involve encoding an image into a lower-dimensional latent space, before the diffusion process, applying noise to the latent representation and thereby reducing the computational load while maintaining the integrity of data reconstruction.
 
 Check out the `latent_forward_process.py` file for an example of the code in action.
 
@@ -37,6 +38,14 @@ Check out the `latent_forward_process.py` file for an example of the code in act
 * Step 1 to Step 10: Progressive addition of noise to the latent representation. As you move from Step 1 to Step 10, the latent representation becomes increasingly noisy, leading to a loss of the original information. By Step 10, the representation appears nearly homogeneous, indicating significant information loss.
 
 ## Reverse Process
+The reverse process, or decoding process, is the core mechanism of the Diffusion Model (LDM). This process involves iteratively removing the noise added during the forward process, effectively reversing the diffusion steps to recover the original data. Each step utilizes a neural network to predict and subtract the noise, gradually converging on the original data distribution.
+
+U-Nets play a crucial role in this process. U-Nets have a U-shaped architecture that is symmetrical along the encoding and decoding paths. This allows the network to capture both local patterns, such as edges and textures, and more abstract features at deeper layers.
+
+This methodology begins with the final noisy representation `Z_T` and employs a neural network model to predict the noise that must be subtracted to achieve `Z_{T-1}`. This process is continued iteratively from `Z_{T-1}` to `Z_{T-2}`, and so forth, until `Z_0` is obtained. Once `Z_0` is reached, it is decoded back into a higher-dimensional space than the latent representation, resulting in `X`, our reconstructed data.
+
+
+
 
 ## Implementation of U-Net in LDM
 

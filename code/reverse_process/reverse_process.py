@@ -1,78 +1,101 @@
-import sys
-from pathlib import Path
-
-# Adjusting the path
-sys.path.append(str(Path(__file__).resolve().parents[1]))
-
-from forward_process.forward_process import image_normalize, forward_diffusion_process
-from unet import unet_model
-
-import numpy as np
-import matplotlib.pyplot as plt
 import tensorflow as tf
+from tensorflow.keras import layers, models
+import numpy as np
+from PIL import Image
+import matplotlib.pyplot as plt
 
-def backward_diffusion_process(noised_images: list, scheduler: np.array, model) -> list:
+def load_image(image_path, size=(512, 512)):
     """
-    Perform the backward diffusion process on a list of noised images using a U-Net model.
-
-    Parameters:
-    noised_images (list): The list of images at each diffusion step.
-    scheduler (np.array): The diffusion scheduler array.
-    model: The U-Net model used for denoising.
-
-    Returns:
-    list: A list of images at each backward diffusion step.
+    Load an image, convert it to grayscale, and normalize it.
     """
-    steps = len(noised_images) - 1
-    reversed_images = [noised_images[-1]]
+    image = Image.open(image_path).convert('L')  # Convert to grayscale
+    image = image.resize(size)
+    image = np.array(image) / 255.0  # Normalize to [0, 1]
+    image = np.expand_dims(image, axis=-1)  # Add channel dimension
+    return image
 
-    for step in range(steps - 1, -1, -1):
-        current_image = reversed_images[-1]
-        epsilon = np.random.normal(0, 1, current_image.shape)
-        de_noised_image = model.predict((current_image - np.sqrt(scheduler[step]) * epsilon) / np.sqrt(1 - scheduler[step])[np.newaxis, ...])[0]
-        reversed_images.append(de_noised_image)
-    
-    reversed_images.reverse()  # To maintain the chronological order
-    return reversed_images
-
-def plot_images(steps: int, image_list: list, latent: bool) -> plt:
+def save_image(image_array, filename):
     """
-    Plot images at each step of the diffusion process.
-
-    Parameters:
-    T (int): The number of diffusion steps.
-    x_list (list): The list of images at each diffusion step.
-
-    Returns:
-    plt: The plot object with the displayed images.
+    Save an image from a numpy array.
     """
-    _, axes = plt.subplots(1, steps + 1, figsize=(15, 5))
-    for step, noised_image in enumerate(image_list):
-        if latent:
-            axes[step].imshow(noised_image, aspect='auto', cmap='gray')
-        else:
-            axes[step].imshow(noised_image, cmap='gray')
-        axes[step].set_title(f"Step {step}", fontsize=10)
-        axes[step].axis('off')
-    plt.show()
+    image_array = np.squeeze(image_array)  # Remove channel dimension if it exists
+    plt.imsave(filename, image_array, cmap='gray')
 
-if __name__ == "__main__":
-    T = 10
-    beta = np.linspace(0.01, 0.2, T)
-    input_shape = (512, 512, 1)
-    unet = unet_model(input_shape)
-    
-    # Load pre-trained weights if available
-    # unet.load_weights('path_to_weights.h5')
+def load_image(image_path, size=(512, 512)):
+    """
+    Load an image, convert it to grayscale, and normalize it.
+    """
+    image = Image.open(image_path).convert('L')  # Convert to grayscale
+    image = image.resize(size)
+    image = np.array(image) / 255.0  # Normalize to [0, 1]
+    image = np.expand_dims(image, axis=-1)  # Add channel dimension
+    return image
 
-    # Normalize the input image
-    x = image_normalize((512, 512), 'img/elephant.jpeg')
+def save_image(image_array, filename):
+    """
+    Save an image from a numpy array.
+    """
+    image_array = np.squeeze(image_array)  # Remove channel dimension if it exists
+    plt.imsave(filename, image_array, cmap='gray')
+def unet_model(input_size=(512, 512, 1)):
+    inputs = tf.keras.Input(input_size)
 
-    # Run forward diffusion process
-    x_list = forward_diffusion_process(x, T, beta)
+    # Contracting Path
+    c1 = layers.Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(inputs)
+    c1 = layers.Dropout(0.1)(c1)
+    c1 = layers.Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c1)
+    p1 = layers.MaxPooling2D((2, 2))(c1)
 
-    # Run backward diffusion process using U-Net
-    x_reconstructed_list = backward_diffusion_process(x_list, beta, unet)
+    c2 = layers.Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(p1)
+    c2 = layers.Dropout(0.1)(c2)
+    c2 = layers.Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c2)
+    p2 = layers.MaxPooling2D((2, 2))(c2)
 
-    # Plot the results of the backward diffusion process
-    plot_images(T, x_reconstructed_list, latent=False)
+    c3 = layers.Conv2D(256, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(p2)
+    c3 = layers.Dropout(0.2)(c3)
+    c3 = layers.Conv2D(256, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c3)
+    p3 = layers.MaxPooling2D((2, 2))(c3)
+
+    # Bottleneck
+    c5 = layers.Conv2D(512, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(p3)
+    c5 = layers.Dropout(0.3)(c5)
+    c5 = layers.Conv2D(512, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c5)
+
+    # Expansive Path
+    u6 = layers.Conv2DTranspose(256, (2, 2), strides=(2, 2), padding='same')(c5)
+    u6 = layers.concatenate([u6, c3])
+    c6 = layers.Conv2D(256, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(u6)
+    c6 = layers.Conv2D(256, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c6)
+
+    u7 = layers.Conv2DTranspose(128, (2, 2), strides=(2, 2), padding='same')(c6)
+    u7 = layers.concatenate([u7, c2])
+    c7 = layers.Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(u7)
+    c7 = layers.Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c7)
+
+    u8 = layers.Conv2DTranspose(64, (2, 2), strides=(2, 2), padding='same')(c7)
+    u8 = layers.concatenate([u8, c1], axis=3)
+    c8 = layers.Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(u8)
+    c8 = layers.Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c8)
+
+    outputs = layers.Conv2D(1, (1, 1), activation='sigmoid')(c8)
+
+    model = models.Model(inputs=[inputs], outputs=[outputs])
+    return model
+
+def process_images(model, start=1, end=10):
+    """
+    Process images from 'img/noised_1.png' to 'img/noised_10.png'.
+    """
+    for i in range(start, end + 1):
+        image_path = f"img/noised_{i}.png"
+        image = load_image(image_path)
+        image = np.expand_dims(image, axis=0)  # Add batch dimension
+        predicted_image = model.predict(image)[0]  # Predict and extract single image from batch
+        save_image(predicted_image, f"img/reconstructed_{i}.png")
+
+# Create and compile the U-Net model
+model = unet_model()
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+
+# Assuming the model is already trained, we process the images
+process_images(model)
