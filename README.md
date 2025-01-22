@@ -1,8 +1,8 @@
-# Introduction to Diffusion Models: Visual Information Reconstruction in Neural Networks
+# Introduction to Diffusion Models
 
 ## Introduction
 
-This paper introduces the application of Latent Diffusion Models (LDM) in reconstructing high-resolution images from brain activity, focusing particularly on the use of the U-Net architecture within these models. We discuss the general mechanism of LDMs, their integration in Code, and specific use cases in visual information processing. This discussion is contextualized within recent research using LDM to reproduce visual perceptions based on brain activity data.
+This repository explores Latent Diffusion Models (LDMs) for reconstructing high-resolution images, emphasizing the U-Net architecture. We discuss the general mechanism of LDMs, their integration in Code, and specific use cases in visual information processing. This discussion is contextualized within recent research using LDM to reproduce visual perceptions based on brain activity data.
 
 <div style="display: flex; justify-content: space-around;">
     <img src="img/dall-e1.png" alt="Description of image 1" width="150"/>
@@ -45,9 +45,23 @@ U-Nets play a crucial role in this process. U-Nets have a U-shaped architecture 
 This methodology begins with the final noisy representation `Z_T` and employs a neural network model to predict the noise that must be subtracted to achieve `Z_{T-1}`. This process is continued iteratively from `Z_{T-1}` to `Z_{T-2}`, and so forth, until `Z_0` is obtained. Once `Z_0` is reached, it is decoded back into a higher-dimensional space than the latent representation, resulting in `X`, our reconstructed data.
 
 
-
-
 ## Implementation of U-Net in LDM
 
-The U-Net architecture plays a crucial role in the functionality of Latent Diffusion Models. Originally developed for biomedical image segmentation, U-Net has been adapted for the generative tasks of LDMs to enhance the quality and precision of the image generation process. Here, we provide TensorFlow code snippets to illustrate the implementation of U-Net within the LDM framework, emphasizing how this integration aids in detailed and accurate image reconstruction
+U-Net is central to stable diffusion:
+
+1. Contracting Path: Learns low-level to high-level features (edges, shapes, textures).
+
+2. Bottleneck: Holds a compressed, high-level representation.
+
+3. Expansive Path: Gradually upscales features to reconstruct fine details.
+
+In LDMs, U-Net receives:
+
+1. Noisy latent image at each step.
+
+2. Time embedding indicating the diffusion step (noise level).
+
+3.Optionally, text embeddings (e.g., from CLIP) if conditioning on textual descriptions.
+
+This architecture effectively balances broad context and precise details, mirroring how the brain processes visual information.
 
