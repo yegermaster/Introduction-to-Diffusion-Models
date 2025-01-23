@@ -46,22 +46,46 @@ This methodology begins with the final noisy representation `Z_T` and employs a 
 
 
 ## Implementation of U-Net in LDM
+![U-net](img/unet_arch.png)
 
-U-Net is central to stable diffusion:
 
-1. Contracting Path: Learns low-level to high-level features (edges, shapes, textures).
+The U-Net architecture operates in three key phases: Contracting Path (Encoder), Bottleneck, and Expanding Path (Decoder). Each phase uses a combination of operations to process data:
+- Convolution (Conv): Extracts features from the input using filters.
+- Pooling (MaxPooling2D): Downscales feature maps to reduce spatial dimensions in the encoder.
+- Upsampling (Conv2DTranspose): Upscales feature maps to restore spatial dimensions in the decoder.
+- Concatenation: Combines encoder and decoder feature maps for better reconstruction.
+- Final Convolution: Reduces the feature maps to the desired number of output channels.
 
-2. Bottleneck: Holds a compressed, high-level representation.
+### 1.  Contracting Path (Encoder)
+- Extracts features at multiple scales and progressively reduces spatial dimensions.
+1. Input Layer: Accepts the input image.
+2. Conv2D: Feature extraction (applied twice per block).
+3. MaxPooling2D: Downscales feature maps.
+### 2.  Bottleneck
+- Captures a compressed, high-level latent representation of the input data.
+1. Conv2D: Feature extraction.
 
-3. Expansive Path: Gradually upscales features to reconstruct fine details.
+### 3.  Expanding Path (Decoder)
+- Gradually reconstructs the input by upscaling and fusing encoder features.
+1. Conv2DTranspose: Upsamples the feature maps.
+2. Concatenation: Combines decoder and encoder features.
+3. Final Conv2D: Outputs the reconstructed image.
 
-In LDMs, U-Net receives:
+We can even observe the U-shaped structure directly in the code, with the Contracting Path (Encoder) leading down, the Bottleneck in the middle, and the Expanding Path (Decoder) curving back up!
 
-1. Noisy latent image at each step.
+![U-net-code](img/unet_code.png)
 
-2. Time embedding indicating the diffusion step (noise level).
 
-3.Optionally, text embeddings (e.g., from CLIP) if conditioning on textual descriptions.
+## U-Net TensorFlow Model Summary with Path Classification
 
-This architecture effectively balances broad context and precise details, mirroring how the brain processes visual information.
-
+| **Layer Type**      | **Path**            | **Frequency of Use**   |
+|----------------------|---------------------|-------------------------|
+| **InputLayer**       | -                  | 1 Instance             |
+| **Conv2D**           | Contracting Path   | 7 Applications         |
+| **MaxPooling2D**     | Contracting Path   | 4 Applications         |
+| **Conv2D**           | Bottleneck         | 2 Applications         |
+| **Conv2DTranspose**  | Expanding Path     | 4 Applications         |
+| **Concatenate**      | Expanding Path     | 4 Applications         |
+| **Conv2D**           | Expanding Path     | 8 Applications         |
+| **Conv2D**           | Output Layer       | 1 Instance             |
+| **Activation**       | Output Layer       | 1 Instance             |
